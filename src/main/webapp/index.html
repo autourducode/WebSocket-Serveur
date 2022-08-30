@@ -1,0 +1,80 @@
+<html>
+<head>
+  <style>
+    #messages {
+      text-align: left;
+      width: 50%;
+      padding: 1em;
+      border: 1px solid blue;
+    }
+  </style>
+  <meta charset="UTF-8">
+  <title>Exemple de client WebSocket</title>
+</head>
+<body>
+<div class="container">
+  <div id="messages" class="messages"></div>
+  <div class="input-fields">
+    <p>Ecrivez un message et cliquez sur envoyer :</p>
+    <input id="message"/>
+    <button id="envoyer">Envoyer</button>
+
+    <p>Choisir une image et cliquez sur envoyer :</p>
+    <input type="file" id="file" accept="image/*"/>
+    <button id="envoyerImage">Envoyer l'image</button>
+  </div>
+</div>
+</body>
+<script type = "text/javascript">
+  let messageWindow = document.getElementById("messages");
+  let sendButton = document.getElementById("envoyer");
+  let messageInput = document.getElementById("message");
+  let fileInput = document.getElementById("file");
+  let sendImageButton = document.getElementById("envoyerImage");
+  let wsUri = "ws://localhost:8080/webSocketServer/simple";
+  var socket;
+
+  function testWebSocket() {
+    socket = new WebSocket(wsUri);
+    socket.binaryType = "arraybuffer";
+    socket.onopen = function (event) {
+      addMessageToWindow("Client connecté: ");
+    };
+    socket.onmessage = function (event) {
+      if (event.data instanceof ArrayBuffer) {
+        addMessageToWindow(`J'ai reçu une image (message binaires):`);
+        addImageToWindow(event.data);
+      } else {
+        addMessageToWindow(`J'ai reçu un message text: ${event.data}`);
+      }
+    };
+  }
+
+  sendButton.onclick = function (event) {
+    sendMessage(messageInput.value);
+    messageInput.value = "";
+  };
+
+  sendImageButton.onclick = function (event) {
+    let file = fileInput.files[0];
+    sendMessage(file);
+    fileInput.value = null;
+  };
+
+  function sendMessage(message) {
+    socket.send(message);
+    addMessageToWindow("Message : " + message);
+  }
+
+  function addMessageToWindow(message) {
+    messageWindow.innerHTML += `<div>${message}</div>`
+  }
+
+  function addImageToWindow(image) {
+    let url = URL.createObjectURL(new Blob([image]));
+    messageWindow.innerHTML += `<img src="${url}"/>`
+  }
+
+  window.addEventListener("load", testWebSocket, false);
+</script>
+</html>
